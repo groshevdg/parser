@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Stock Analyzer</string>
+    <string name="parse">Parse</string>
+    <string name="show">Show</string>
+</resources>
