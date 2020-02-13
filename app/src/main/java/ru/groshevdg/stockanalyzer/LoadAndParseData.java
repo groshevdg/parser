@@ -2,6 +2,7 @@ package ru.groshevdg.stockanalyzer;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
 import android.util.Log;
@@ -27,6 +28,9 @@ import ru.groshevdg.stockanalyzer.data.DBHelper;
 public class LoadAndParseData extends AsyncTask<Void, Void, Void> {
 
     private Context context;
+    private String[] selectionForCheckDataSaved = new String[] {DBHelper.Stock.COMPANY_NAME};
+    private boolean hasSaved = false;
+    private int countNonSavedData = 0;
 
     public LoadAndParseData(Context context) {
         this.context = context;
@@ -59,6 +63,9 @@ public class LoadAndParseData extends AsyncTask<Void, Void, Void> {
 
             jsonObject = new JSONObject(response.toString());
 
+            inputStream.close();
+            reader.close();
+            connection.disconnect();
         }
         catch (MalformedURLException e ) {
             Log.d("Load", "Url exception");
@@ -80,7 +87,7 @@ public class LoadAndParseData extends AsyncTask<Void, Void, Void> {
 
         if (loadedJSON == null) return new HashMap<>();
 
-        Map<String, String> stocks = new HashMap<>();
+        Map<String, String> companies = new HashMap<>();
         try {
             JSONArray jsonArray = loadedJSON.getJSONArray("mostActiveStock");
 
@@ -90,17 +97,18 @@ public class LoadAndParseData extends AsyncTask<Void, Void, Void> {
                 String companyName = currentObject.getString("companyName");
                 String price = currentObject.getString("price");
 
-                stocks.put(companyName, price);
+                companies.put(companyName, price);
             }
         }
         catch (JSONException e) {
             Log.d("Load", "Parse JSON exception");
         }
-        return stocks;
+        return companies;
     }
 
     private void saveDataInDB(Map<String, String> map) {
         SQLiteDatabase db = new DBHelper(context).getWritableDatabase();
+        countNonSavedData = 0;
 
         for (Map.Entry<String, String> entry: map.entrySet()) {
             ContentValues contentValues = new ContentValues();
@@ -108,16 +116,48 @@ public class LoadAndParseData extends AsyncTask<Void, Void, Void> {
             String companyName = entry.getKey();
             String price = entry.getValue();
 
-            contentValues.put(DBHelper.Stock.COMPANY_NAME, companyName);
-            contentValues.put(DBHelper.Stock.PRICE, price);
+            if (isDataSaved(db, companyName)) {
+                continue;
+            } else {
+                countNonSavedData++;
 
-            db.insert(DBHelper.Stock.TABLE_NAME, null, contentValues);
+                contentValues.put(DBHelper.Stock.COMPANY_NAME, companyName);
+                contentValues.put(DBHelper.Stock.PRICE, price);
+
+                db.insert(DBHelper.Stock.TABLE_NAME, null, contentValues);
+            }
         }
+        db.close();
+    }
+
+    private boolean isDataSaved(SQLiteDatabase db, String currentCompanyName) {
+        Cursor cursor = db.query(DBHelper.Stock.TABLE_NAME, selectionForCheckDataSaved,
+                null, null, null, null, null);
+        int savedCompanyNameIndex = cursor.getColumnIndex(DBHelper.Stock.COMPANY_NAME);
+
+        while (cursor.moveToNext()) {
+            String savedCompanyName = cursor.getString(savedCompanyNameIndex);
+
+            if (savedCompanyName.equals(currentCompanyName)) {
+                hasSaved = true;
+                break;
+            } else {
+                hasSaved = false;
+            }
+        }
+        cursor.close();
+        return hasSaved;
     }
 
     @Override
     protected void onPostExecute(Void aVoid) {
-        Toast.makeText(context, context.getResources().getString(R.string.data_saved), Toast.LENGTH_SHORT).show();
+        if (countNonSavedData != 0) {
+            Toast.makeText(context, context.getResources().getString(R.string.data_saved), Toast.LENGTH_SHORT).show();
+        }
+        else {
+            Toast.makeText(context, context.getResources().getString(R.string.nothing_to_parse), Toast.LENGTH_SHORT).show();
+
+        }
         super.onPostExecute(aVoid);
     }
 }
