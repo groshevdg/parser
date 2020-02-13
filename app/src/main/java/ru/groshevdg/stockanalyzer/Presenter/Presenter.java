@@ -48,9 +48,9 @@ public class Presenter {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 
             NetworkCapabilities capabilities = manager.getNetworkCapabilities(manager.getActiveNetwork());
-            if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
+            if (capabilities != null && (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
                     || (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI))
-                    || (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR))) {
+                    || (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)))) {
                 return true;
             }
         } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {

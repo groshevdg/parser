@@ -8,7 +8,7 @@ import android.provider.BaseColumns;
 public class DBHelper extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "stocks.db";
-    private static final int DB_VERSION = 6;
+    private static final int DB_VERSION = 10;
 
     public DBHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
