@@ -1,4 +1,4 @@
-package ru.groshevdg.stockanalyzer.data;
+package ru.groshevdg.stockanalyzer.Model.data;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;

@@ -2,23 +2,20 @@ package ru.groshevdg.stockanalyzer;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListAdapter;
 import android.widget.ListView;
-
+import android.widget.Toast;
 import java.util.ArrayList;
-
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import ru.groshevdg.stockanalyzer.data.DBHelper;
+import ru.groshevdg.stockanalyzer.Presenter.Presenter;
+import ru.groshevdg.stockanalyzer.View.MainView;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements MainView {
     @BindView(R.id.list_of_stocks)
     ListView stockList;
 
@@ -30,60 +27,54 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String ADAPTER_STATE = "adapter_of_list_view";
     private ArrayList<String> companies;
+    private Presenter myPresenter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+        myPresenter = new Presenter(this, getApplicationContext());
 
         if (savedInstanceState != null) {
             companies = savedInstanceState.getStringArrayList(ADAPTER_STATE);
             stockList.setAdapter(new ArrayAdapter<>(this,
-                    android.R.layout.simple_list_item_1, companies));
+                    R.layout.custom_list_item, R.id.text, companies));
         }
-    }
-
-    public void loadAndParse(View view) {
-        new LoadAndParseData(getApplicationContext()).execute();
     }
 
     public void showData(View view) {
-        stockList.setAdapter(emptyAdapter());
-        ListAdapter adapter = getAdapter();
-        stockList.setAdapter(adapter);
+        show();
     }
 
-    private ListAdapter getAdapter() {
-        SQLiteDatabase database = new DBHelper(getApplicationContext()).getReadableDatabase();
-        Cursor cursor = database.query(DBHelper.Stock.TABLE_NAME, null,
-                null, null, null, null, null);
-
-        int companyNameIndex = cursor.getColumnIndex(DBHelper.Stock.COMPANY_NAME);
-        int priceIndex = cursor.getColumnIndex(DBHelper.Stock.PRICE);
-
-        companies = new ArrayList<>();
-
-        while (cursor.moveToNext()) {
-            String companyName = cursor.getString(companyNameIndex);
-            String prices = cursor.getString(priceIndex);
-
-            companies.add(companyName + "\n" + "Current price: " + prices);
+    public void loadAndParse(View view) {
+        if (myPresenter.isNetworkAvailable()) {
+            parse();
         }
-
-        ListAdapter adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, companies);
-        database.close();
-        cursor.close();
-        return adapter;
+        else {
+            Toast.makeText(this, getResources().getString(R.string.not_available), Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
+        companies = myPresenter.getListToSave();
         outState.putStringArrayList(ADAPTER_STATE, companies);
         super.onSaveInstanceState(outState);
     }
 
+    @Override
+    public void show() {
+        stockList.setAdapter(emptyAdapter());
+        stockList.setAdapter(myPresenter.getArrayAdapter());
+    }
+
+    @Override
+    public void parse() {
+        myPresenter.parse();
+    }
+
     private ListAdapter emptyAdapter() {
-        return new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, new String[] {});
+        return new ArrayAdapter<>(this, R.layout.custom_list_item, R.id.text, new String[] {});
     }
 }

@@ -1,4 +1,4 @@
-package ru.groshevdg.stockanalyzer;
+package ru.groshevdg.stockanalyzer.Model;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -23,7 +23,8 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import ru.groshevdg.stockanalyzer.data.DBHelper;
+import ru.groshevdg.stockanalyzer.R;
+import ru.groshevdg.stockanalyzer.Model.data.DBHelper;
 
 public class LoadAndParseData extends AsyncTask<Void, Void, Void> {
 
@@ -31,9 +32,11 @@ public class LoadAndParseData extends AsyncTask<Void, Void, Void> {
     private String[] selectionForCheckDataSaved = new String[] {DBHelper.Stock.COMPANY_NAME};
     private boolean hasSaved = false;
     private int countNonSavedData = 0;
+    private String urlString = "";
 
-    public LoadAndParseData(Context context) {
+    public LoadAndParseData(Context context, String url) {
         this.context = context;
+        this.urlString = url;
     }
 
     @Override
@@ -51,7 +54,7 @@ public class LoadAndParseData extends AsyncTask<Void, Void, Void> {
         StringBuilder response = new StringBuilder();
 
         try {
-            URL url = new URL("https://financialmodelingprep.com/api/v3/stock/actives");
+            URL url = new URL(urlString);
 
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             InputStream inputStream = connection.getInputStream();
