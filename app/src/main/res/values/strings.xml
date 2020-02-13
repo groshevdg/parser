@@ -2,4 +2,5 @@
     <string name="app_name">Stock Analyzer</string>
     <string name="parse">Parse</string>
     <string name="show">Show</string>
+    <string name="data_saved">Data has saved in database!</string>
 </resources>
