@@ -23,6 +23,9 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import ru.groshevdg.stockanalyzer.R;
 import ru.groshevdg.stockanalyzer.Model.data.DBHelper;
 
@@ -50,40 +53,29 @@ public class LoadAndParseData extends AsyncTask<Void, Void, Void> {
     @Nullable
     private JSONObject getJsonObject() {
         JSONObject jsonObject = null;
-        String line;
-        StringBuilder response = new StringBuilder();
+        OkHttpClient client = new OkHttpClient();
 
         try {
-            URL url = new URL(urlString);
+            Request request = new Request.Builder()
+                    .url(urlString)
+                    .build();
 
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            InputStream inputStream = connection.getInputStream();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+            Response response = client.newCall(request).execute();
+            String responseString = response.body().string();
+            jsonObject = new JSONObject(responseString);
 
-            while ((line = reader.readLine()) != null) {
-                response.append(line);
-            }
-
-            jsonObject = new JSONObject(response.toString());
-
-            inputStream.close();
-            reader.close();
-            connection.disconnect();
-        }
-        catch (MalformedURLException e ) {
-            Log.d("Load", "Url exception");
         }
         catch (IOException e) {
-            Log.d("Load", "I/O exception");
+            Log.d("Load", "I/O Exception");
         }
-        catch (JSONException e ) {
-            Log.d("Load", "Parse JSON exception");
+        catch (JSONException e) {
+            Log.d("Load", "parse JSON exception");
         }
         catch (Exception e) {
-            Log.d("Load", "Unknown exception");
+            Log.d("Load", "unknown exception");
         }
-
         return jsonObject;
+
     }
 
     private Map<String, String> parseJson(JSONObject loadedJSON) {
